@@ -119,4 +119,4 @@ Raw CSVs are not version-controlled. To reproduce:
 - [x] Q5 — Late delivery rate and severity
 - [x] Q5b — Late delivery by state
 - [x] Q6 — Relationship between delivery delay and review score
-- [ ] Power BI interactive dashboard
+
