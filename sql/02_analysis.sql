@@ -109,8 +109,41 @@ GROUP BY c.customer_state;
 
 
 -- ============================================================
--- Q3 — Which categories contribute the most GMV?  [TODO]
+-- Q3 — Which categories contribute the most GMV?
 -- ============================================================
+
+SELECT
+    p.product_category_name,
+    COUNT(DISTINCT o.order_id)                                              AS orders,
+    ROUND(SUM(oi.price + oi.freight_value), 2)                              AS gmv,
+    ROUND(SUM(oi.price + oi.freight_value) / COUNT(DISTINCT o.order_id), 2) AS aov
+FROM `01_order` o
+JOIN `02_order_items` oi ON o.order_id    = oi.order_id
+JOIN `05_products`    p  ON oi.product_id = p.product_id
+WHERE o.order_status = 'delivered'
+GROUP BY p.product_category_name
+ORDER BY gmv DESC
+LIMIT 20;
+
+-- Results (top 5):
+--   beleza_saude            8,647 orders | GMV 1,412,090 | AOV 163.30
+--   relogios_presentes      5,495 orders | GMV 1,264,333 | AOV 230.09
+--   cama_mesa_banho         9,272 orders | GMV 1,225,209 | AOV 132.14
+--   esporte_lazer           7,530 orders | GMV 1,118,257 | AOV 148.51
+--   informatica_acessorios  6,530 orders | GMV 1,032,724 | AOV 158.15
+--
+-- Findings:
+--   - Category GMV is evenly spread: #1 to #5 differ by less than 40%
+--   - This contrasts sharply with the geographic picture (SP alone = 37%)
+--     -> concentration risk sits in geography, not in product mix
+--   - Two distinct category profiles emerge:
+--       relogios_presentes  fewest orders but 2nd highest GMV, AOV 230
+--                           -> high-value, low-frequency
+--       cama_mesa_banho     most orders but only 3rd in GMV, AOV 132
+--                           -> high-volume, low-margin
+--     The two require different operational strategies: the first depends
+--     on conversion and basket value, the second on traffic and repeat purchase.
+
 
 
 -- ============================================================
@@ -206,8 +239,92 @@ GROUP BY delay_bucket;
 
 
 -- ============================================================
--- Q6 — Does delivery delay affect review scores?  [TODO]
--- Suggested approach: reuse the delay buckets from Q5, join
--- 07_order_reviews, and compare AVG(review_score) per bucket.
--- This would show whether the delays found in Q5 actually matter.
+-- Q5b — Late delivery by state
+-- HAVING filters out states with too few orders to be meaningful
 -- ============================================================
+
+SELECT
+    c.customer_state,
+    COUNT(*)                                                                AS delivered_orders,
+    ROUND(AVG(o.order_delivered_customer_date > o.order_estimated_delivery_date) * 100, 2)
+                                                                            AS late_rate_pct,
+    ROUND(AVG(DATEDIFF(o.order_delivered_customer_date, o.order_purchase_timestamp)), 1)
+                                                                            AS avg_delivery_days
+FROM `01_order` o
+JOIN `04_customers` c ON o.customer_id = c.customer_id
+WHERE o.order_status = 'delivered'
+  AND o.order_delivered_customer_date IS NOT NULL
+GROUP BY c.customer_state
+HAVING delivered_orders >= 500
+ORDER BY late_rate_pct DESC;
+
+-- Results (worst 6):
+--   MA     717 orders | 19.67% late
+--   CE   1,279 orders | 15.32%
+--   BA   3,256 orders | 14.04%
+--   RJ  12,350 orders | 13.47%   <-- outlier
+--   PA     946 orders | 12.37%
+--   ES   1,995 orders | 12.23%
+--
+-- (National average: 8.11%)
+--
+-- Findings:
+--   - Most poor performers are remote northern/northeastern states,
+--     which is expected given the seller base is concentrated in SP
+--   - RJ is the outlier: Brazil's 2nd largest market, 400km from SP,
+--     with the highest AOV in the country (166) -- yet its late rate
+--     is 1.7x the national average, close to remote-state levels
+--   - Volume matters: RJ carries 12,350 orders against MA's 717, so RJ
+--     alone produces more late deliveries than the other high-rate
+--     states combined
+--
+-- Key point: RJ's delay is not distance-driven and may therefore be
+--            fixable. The platform's most valuable customers are
+--            receiving second-tier fulfilment. Worth investigating
+--            carrier performance and last-mile coverage in RJ.
+
+
+-- ============================================================
+-- Q6 — Does delivery delay affect review scores?
+-- ============================================================
+
+SELECT
+    CASE
+        WHEN o.order_delivered_customer_date <= o.order_estimated_delivery_date THEN 'On time'
+        WHEN DATEDIFF(o.order_delivered_customer_date, o.order_estimated_delivery_date) <= 7  THEN '1-7 days late'
+        WHEN DATEDIFF(o.order_delivered_customer_date, o.order_estimated_delivery_date) <= 30 THEN '8-30 days late'
+        ELSE '30+ days late'
+    END                                                                     AS delay_bucket,
+    COUNT(*)                                                                AS orders,
+    ROUND(AVG(r.review_score), 2)                                           AS avg_score,
+    ROUND(AVG(r.review_score = 1) * 100, 2)                                 AS one_star_pct
+FROM `01_order` o
+JOIN `07_order_reviews` r ON o.order_id = r.order_id
+WHERE o.order_status = 'delivered'
+  AND o.order_delivered_customer_date IS NOT NULL
+GROUP BY delay_bucket
+ORDER BY avg_score DESC;
+
+-- Results:
+--   On time        88,653 | avg 4.29 | 1-star  6.60%
+--   1-7 days late   4,903 | avg 3.06 | 1-star 32.74%
+--   30+ days late     331 | avg 2.05 | 1-star 63.14%
+--   8-30 days late  2,466 | avg 1.65 | 1-star 70.56%
+--
+-- Findings:
+--   - The penalty for lateness is a cliff, not a slope. A single day
+--     late takes the 1-star rate from 6.6% to 32.7% -- a 5x jump
+--   - This revises the Q5 reading: the 63% of delays falling under a
+--     week are NOT harmless variance. Customers do not grade on a curve
+--   - Measured by customers affected, minor delays do far more damage
+--     than extreme ones: the 1-7 day bucket holds 4,903 orders against
+--     331 in the 30+ bucket (15x)
+--   - Anomaly: 30+ days late scores HIGHER (2.05) than 8-30 days (1.65).
+--     Possible explanations include refund or resolution processes for
+--     very late orders, or pre-order items where slow delivery was
+--     expected. Not resolved -- flagged rather than explained away.
+--
+-- Key point: delivery reliability, not delivery speed, drives
+--            satisfaction. Olist already beats its promised date by
+--            11.9 days on average; it is the 8% that miss which cost
+--            the platform its ratings.
