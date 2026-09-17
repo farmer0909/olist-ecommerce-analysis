@@ -3,7 +3,7 @@
 Analysis of ~100,000 Brazilian e-commerce orders to locate where revenue comes from
 and where operations are leaking value.
 
-**Stack:** MySQL · DataGrip · Power BI (in progress)
+**Stack:** MySQL · DataGrip · 
 
 ---
 
