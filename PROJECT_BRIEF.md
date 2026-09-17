@@ -1,77 +1,46 @@
-# Olist 电商运营分析
+# Project Brief
 
-分析 10 万笔巴西电商订单,定位收入来源与运营瓶颈。
+## Scenario
 
-<!-- 截图待补 -->
+Olist is one of Brazil's largest e-commerce marketplaces. This project is framed as a
+**quarterly business review for a Head of Operations**, answering one core question:
 
-## 背景
-Brazilian E-Commerce Public Dataset by Olist
-Welcome! This is a Brazilian ecommerce public dataset of orders made at Olist Store.
-The dataset has information of 100k orders from 2016 to 2018 made at multiple marketplaces in Brazil.
-Its features allows viewing an order from multiple dimensions: from order status, price,
-payment and freight performance to customer location, product attributes and finally reviews written by customers.
-We also released a geolocation dataset that relates Brazilian zip codes to lat/lng coordinates.
+> **Where does the money come from, and where is it leaking?**
 
-This is real commercial data, it has been anonymised, and references to the companies and partners in the review text have been replaced with the names of Game of Thrones great houses.
+## Sub-questions
 
-## 关键发现
-<!-- 分析完再填 -->
+### Where the money comes from
+- **Q1** — How is GMV distributed across states? How concentrated is it?
+- **Q2** — Does average order value differ by state? Where does the difference come from?
+- **Q3** — Which product categories contribute the most?
+- **Q4** — What does the monthly GMV trend look like?
 
-## 技术栈
-MySQL · Python (Pandas) · Power BI
+### Where it leaks
+- **Q5** — What is the late delivery rate? Which states are worst affected?
+- **Q6** — Is delivery delay correlated with review scores?
 
-A. 销售/市场分析师 📈
+## Data Feasibility
 
-关心：怎样增加收入？
-问题：
+| Question | Tables required | Feasible |
+|---|---|---|
+| Q1 | 01_order + 04_customers + 02_order_items | Yes |
+| Q2 | above + 05_products | Yes |
+| Q3 | 02_order_items + 05_products | Yes |
+| Q4 | 01_order + 02_order_items | Yes |
+| Q5 | 01_order (delivered vs estimated date) | Yes — must exclude orders missing a delivery date |
+| Q6 | 01_order + 07_order_reviews | Yes |
 
-哪些州最赚钱？
-哪些产品类别最畅销？
-月度增长怎样？
-B. 物流/运营分析师 🚚
+## Definitions
 
-关心：怎样改进物流？
-问题：
+- **GMV = price + freight_value** — gross merchandise value, not profit.
+  The dataset has no commission or service-fee field, so Olist's own revenue
+  cannot be calculated.
+- All analysis is filtered to `order_status = 'delivered'`.
+- `01_order` and `02_order_items` have a one-to-many relationship, so order counts
+  must use `COUNT(DISTINCT order_id)`.
 
-送达时间怎样？
-哪些地区经常晚点？
-物流成本能优化吗？
-C. 产品分析师 📦
+## Deliverables
 
-关心：哪些产品要重点推？
-问题：
-
-背景:Olist 巴西电商平台,2016-2018 订单数据
-问题:平台的收入集中在哪里?有哪些运营问题在拖后腿?
-产出:Power BI 仪表板 + 一页分析结论
-
-哪些品类卖得最好？
-客户满意度怎样？
-品类间的对比？
-D. 客户/增长分析师 👥
-
-关心：怎样提高复购率？
-问题：
-
-有多少重复客户？
-高价值客户特征？
-怎样识别流失客户？
-
-            ## 场景
-运营总监季度复盘。问题:钱从哪来,哪里在漏?
-
-## 子问题
-Q1 收入按州怎么分布?
-Q2 哪些品类贡献最大?
-Q3 收入的月度走势?
-Q4 配送延迟率多少?哪些州最严重?
-Q5 延迟跟评分有关系吗?
-Q6 运费占订单金额多少?
-
-## 数据可行性
-Q1 → order + customers + order_items ✓
-Q4 → order(送达日期 vs 预计日期),注意排除 3000 笔缺失 ✓
-...
-
-## 产出
-Power BI 仪表板 + README 关键发现
+- SQL analysis scripts (`sql/`)
+- Running findings log (`notes/findings.md`)
+- Power BI dashboard (planned)

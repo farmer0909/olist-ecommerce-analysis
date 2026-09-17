@@ -1,4 +1,13 @@
+# DataGrip / JetBrains
 .idea/
+
+# Data files
 data/
 *.csv
+
+# Power BI
 *.pbix
+
+# OS
+.DS_Store
+Thumbs.db
