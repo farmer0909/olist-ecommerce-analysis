@@ -67,7 +67,27 @@ reinforcing the effect.
 
 ## Q3 — GMV by Category
 
-*To do*
+| Category | Orders | GMV | AOV |
+|---|---|---|---|
+| beleza_saude | 8,647 | 1,412,090 | 163.30 |
+| relogios_presentes | 5,495 | 1,264,333 | 230.09 |
+| cama_mesa_banho | 9,272 | 1,225,209 | 132.14 |
+| esporte_lazer | 7,530 | 1,118,257 | 148.51 |
+| informatica_acessorios | 6,530 | 1,032,724 | 158.15 |
+
+- Category GMV is **evenly spread** — #1 to #5 differ by less than 40%
+- Sharp contrast with the geographic picture, where SP alone takes 37%
+  → **concentration risk sits in geography, not in product mix**
+
+Two distinct profiles stand out:
+
+- **relogios_presentes** — fewest orders of the five, yet 2nd highest GMV.
+  AOV 230 → high-value, low-frequency
+- **cama_mesa_banho** — most orders, yet only 3rd in GMV.
+  AOV 132 → high-volume, low-margin
+
+These need different playbooks: the first lives on conversion and basket
+value, the second on traffic and repeat purchase.
 
 ---
 
@@ -121,8 +141,63 @@ fulfilment breakdowns.
 
 ---
 
+## Q5b — Late Delivery by State
+
+| State | Orders | Late rate |
+|---|---|---|
+| MA | 717 | 19.67% |
+| CE | 1,279 | 15.32% |
+| BA | 3,256 | 14.04% |
+| **RJ** | **12,350** | **13.47%** |
+| PA | 946 | 12.37% |
+| ES | 1,995 | 12.23% |
+
+*(National average 8.11%. Filtered to states with ≥500 delivered orders,
+so small-sample states don't distort the ranking.)*
+
+Most of the worst performers are remote northern/northeastern states —
+expected, given the seller base sits in SP.
+
+**The outlier is RJ.** Brazil's second-largest market, 400km from SP, with
+the highest AOV in the country (R$166) — yet its late rate is 1.7x the
+national average, close to remote-state levels. Distance doesn't explain
+this one.
+
+Volume compounds it: RJ carries 12,350 orders against MA's 717, so RJ
+alone produces more late deliveries than the other high-rate states
+combined. The platform's most valuable customers are getting second-tier
+fulfilment.
+
+→ **Recommendation:** RJ's delay isn't distance-driven and may be fixable.
+  Worth investigating carrier performance and last-mile coverage there.
+
+---
+
 ## Q6 — Delay vs Review Score
 
-*To do* — reuse the Q5 delay buckets, join `07_order_reviews`, compare
-average review score per bucket. This would show whether the delays
-found in Q5 actually cost anything.
+| Delay bucket | Orders | Avg score | 1-star rate |
+|---|---|---|---|
+| On time | 88,653 | 4.29 | 6.60% |
+| 1–7 days late | 4,903 | 3.06 | 32.74% |
+| 8–30 days late | 2,466 | 1.65 | 70.56% |
+| 30+ days late | 331 | 2.05 | 63.14% |
+
+**The penalty is a cliff, not a slope.** A single day late takes the
+1-star rate from 6.6% to 32.7% — a 5x jump.
+
+This **revises the Q5 reading**. There the 63% of delays falling under a
+week looked like harmless variance. They aren't — customers don't grade
+on a curve. Late is late.
+
+And measured by customers affected, minor delays do far more damage than
+extreme ones: the 1–7 day bucket holds 4,903 orders against 331 in the
+30+ bucket, 15x as many.
+
+**Anomaly:** 30+ days late scores *higher* (2.05) than 8–30 days (1.65).
+Possible explanations — refund or resolution processes kicking in for very
+late orders, or pre-order items where slow delivery was expected. Not
+resolved; flagged rather than explained away.
+
+**Key point:** delivery *reliability*, not speed, drives satisfaction.
+Olist already beats its promised date by 11.9 days on average. It's the
+8% that miss which cost the platform its ratings.
